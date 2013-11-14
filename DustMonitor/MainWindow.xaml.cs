@@ -53,9 +53,9 @@ namespace DustMonitor
             //MessageBox.Show(DateTime.Now.ToString("yyyy-MM-ddThh:mm:ss"));
             System.Threading.Timer timer = new Timer(new TimerCallback(PostToYeelink), null, 10000, 10000);
             Thread read = new Thread(new ParameterizedThreadStart(ReadPort));
-           // Thread post = new Thread(new ParameterizedThreadStart(PostToYeelink));
+            // Thread post = new Thread(new ParameterizedThreadStart(PostToYeelink));
             read.Start(new object());
-           // post.Start(new object());
+            // post.Start(new object());
             this.StartButton.IsEnabled = false;
         }
 
@@ -84,20 +84,20 @@ namespace DustMonitor
                 {
                     //lock (queueDic)
                     //{
-                        currentPort.Read(buffer, 0, buffer.Length);
-                        if (buffer.Length > 64)
+                    currentPort.Read(buffer, 0, buffer.Length);
+                    if (buffer.Length > 64)
+                    {
+                        result = System.Text.ASCIIEncoding.Default.GetString(buffer);
+                        MatchCollection matchs = reg.Matches(result);
+                        foreach (Match match in matchs)
                         {
-                            result = System.Text.ASCIIEncoding.Default.GetString(buffer);
-                            MatchCollection matchs = reg.Matches(result);
-                            foreach (Match match in matchs)
-                            {
-                                queueDic.Add(DateTime.Now.ToString("yyyy-MM-ddThh:mm:ss") + System.Guid.NewGuid().ToString(), regFloat.Match(match.Value).Value);
-                            }
-                            //Monitor.Pulse(queueDic);
-                            //Monitor.Wait(queueDic);
-                            //MessageBox.Show(queueDic.Last().Value);
-
+                            queueDic.Add(DateTime.Now.ToString("yyyy-MM-ddThh:mm:ss") + System.Guid.NewGuid().ToString(), regFloat.Match(match.Value).Value);
                         }
+                        //Monitor.Pulse(queueDic);
+                        //Monitor.Wait(queueDic);
+                        //MessageBox.Show(queueDic.Last().Value);
+
+                    }
                     //}
 
                 }
@@ -120,7 +120,7 @@ namespace DustMonitor
                     string deviceID = "5714";
                     string sensorID = "8827";
                     string timeStamp, currentValue, json, status = string.Empty;
-                    byte[] buffer=new byte[128];
+                    byte[] buffer = new byte[128];
                     lock (queueDic)
                     {
                         try

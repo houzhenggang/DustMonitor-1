@@ -12,3 +12,4 @@ E:\CProject\DustMonitor\DustMonitor\obj\Debug\DustMonitor.Properties.Resources.r
 E:\CProject\DustMonitor\DustMonitor\obj\Debug\DustMonitor.csproj.GenerateResource.Cache
 E:\CProject\DustMonitor\DustMonitor\obj\Debug\DustMonitor.exe
 E:\CProject\DustMonitor\DustMonitor\obj\Debug\DustMonitor.pdb
+E:\CProject\DustMonitor\DustMonitor\obj\Debug\DustMonitor.csprojResolveAssemblyReference.cache

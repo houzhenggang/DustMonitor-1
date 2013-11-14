@@ -51,11 +51,14 @@ namespace DustMonitor
             //ThreadPool.QueueUserWorkItem(new WaitCallback(ReadPort), new object());
             //ThreadPool.QueueUserWorkItem(new WaitCallback(PostToYeelink), new object());
             //MessageBox.Show(DateTime.Now.ToString("yyyy-MM-ddThh:mm:ss"));
-            System.Threading.Timer timer = new Timer(new TimerCallback(PostToYeelink), null, 10000, 10000);
+            System.Threading.Timer timer = new Timer(new TimerCallback(PostToYeelink), null, 3000, 10000);
             Thread read = new Thread(new ParameterizedThreadStart(ReadPort));
-           // Thread post = new Thread(new ParameterizedThreadStart(PostToYeelink));
+            
+            // Thread post = new Thread(new ParameterizedThreadStart(PostToYeelink));
             read.Start(new object());
-           // post.Start(new object());
+            read.IsBackground = true;
+            // post.Start(new object());
+            
             this.StartButton.IsEnabled = false;
         }
 
@@ -84,20 +87,20 @@ namespace DustMonitor
                 {
                     //lock (queueDic)
                     //{
-                        currentPort.Read(buffer, 0, buffer.Length);
-                        if (buffer.Length > 64)
+                    currentPort.Read(buffer, 0, buffer.Length);
+                    if (buffer.Length > 64)
+                    {
+                        result = System.Text.ASCIIEncoding.Default.GetString(buffer);
+                        MatchCollection matchs = reg.Matches(result);
+                        foreach (Match match in matchs)
                         {
-                            result = System.Text.ASCIIEncoding.Default.GetString(buffer);
-                            MatchCollection matchs = reg.Matches(result);
-                            foreach (Match match in matchs)
-                            {
-                                queueDic.Add(DateTime.Now.ToString("yyyy-MM-ddThh:mm:ss") + System.Guid.NewGuid().ToString(), regFloat.Match(match.Value).Value);
-                            }
-                            //Monitor.Pulse(queueDic);
-                            //Monitor.Wait(queueDic);
-                            //MessageBox.Show(queueDic.Last().Value);
-
+                            queueDic.Add(DateTime.Now.ToString("yyyy-MM-ddThh:mm:ss") + System.Guid.NewGuid().ToString(), regFloat.Match(match.Value).Value);
                         }
+                        //Monitor.Pulse(queueDic);
+                        //Monitor.Wait(queueDic);
+                        //MessageBox.Show(queueDic.Last().Value);
+
+                    }
                     //}
 
                 }
@@ -110,67 +113,65 @@ namespace DustMonitor
         }
         public void PostToYeelink(object parameters)
         {
-
-
-            while (true)
+            MessageBox.Show("out");
+            if (queueDic.Count > 0)
             {
-                if (queueDic.Count > 0)
-                {
-                    string apiKey = "e29724be2907878edcfd99416bb438c7";
-                    string deviceID = "5714";
-                    string sensorID = "8827";
-                    string timeStamp, currentValue, json, status = string.Empty;
-                    byte[] buffer=new byte[128];
-                    lock (queueDic)
-                    {
-                        try
-                        {
-                            timeStamp = queueDic.Last().Key.Substring(0, 19);
-                            currentValue = queueDic.Last().Value;
-                            json = @"{""timestamp"":""" + timeStamp + @""",""value"":" + currentValue + "}";
-                            buffer = ASCIIEncoding.ASCII.GetBytes(json);
+                MessageBox.Show("in");
 
-                        }
-                        catch (Exception ex)
-                        {
+                string apiKey = "e29724be2907878edcfd99416bb438c7";
+                string deviceID = "5714";
+                string sensorID = "8827";
+                string timeStamp, currentValue, json, status = string.Empty;
+                byte[] buffer = new byte[128];
+                //lock (queueDic)
+                //{
+                //    try
+                //    {
+                timeStamp = queueDic.Last().Key.Substring(0, 19);
+                currentValue = queueDic.Last().Value;
+                json = @"{""timestamp"":""" + timeStamp + @""",""value"":" + currentValue + "}";
+                buffer = ASCIIEncoding.ASCII.GetBytes(json);
 
-                        }
-                        finally
-                        {
-                            //Monitor.Pulse(queueDic);
-                            //Monitor.Wait(queueDic);
-                        }
-                    }
-                    //Monitor.Pulse(queueDic);
-                    //Monitor.Wait(queueDic);
+                //    }
+                //    catch (Exception ex)
+                //    {
+
+                //    }
+                //    finally
+                //    {
+                //        //Monitor.Pulse(queueDic);
+                //        //Monitor.Wait(queueDic);
+                //    }
+                //}
+                //Monitor.Pulse(queueDic);
+                //Monitor.Wait(queueDic);
 
 
-                    GC.Collect();
-                    HttpWebRequest request = WebRequest.Create("http://api.yeelink.net/v1.0/device/" + deviceID + "/sensor/" + sensorID + "/datapoints") as HttpWebRequest;
-                    request.Proxy = null;
-                    request.Method = "POST";
-                    request.Host = "api.yeelink.net";
-                    request.ContentLength = buffer.Length;
-                    request.ContentType = "application/x-www-form-urlencoded";
-                    request.Headers.Add("U-ApiKey", apiKey);
-                    request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36";
-                    request.Accept = "*/*";
-                    request.KeepAlive = false;
-                    request.Timeout = 20000;
-                    Stream requestStrm = request.GetRequestStream();
-                    requestStrm.Write(buffer, 0, buffer.Length);
-                    requestStrm.Close();
+                GC.Collect();
+                HttpWebRequest request = WebRequest.Create("http://api.yeelink.net/v1.0/device/" + deviceID + "/sensor/" + sensorID + "/datapoints") as HttpWebRequest;
+                request.Proxy = null;
+                request.Method = "POST";
+                request.Host = "api.yeelink.net";
+                request.ContentLength = buffer.Length;
+                request.ContentType = "application/x-www-form-urlencoded";
+                request.Headers.Add("U-ApiKey", apiKey);
+                request.UserAgent = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1599.101 Safari/537.36";
+                request.Accept = "*/*";
+                request.KeepAlive = false;
+                request.Timeout = 20000;
+                Stream requestStrm = request.GetRequestStream();
+                requestStrm.Write(buffer, 0, buffer.Length);
+                requestStrm.Close();
 
-                    queueDic.Clear();
+                queueDic.Clear();
 
-                    HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                    status = response.StatusCode.ToString();
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                status = response.StatusCode.ToString();
 
-                    if (request != null) request.Abort();
-                    response.Close();
+                if (request != null) request.Abort();
+                response.Close();
 
-                    MessageBox.Show(status);
-                }
+                MessageBox.Show(status);
             }
         }
 
@@ -187,42 +188,9 @@ namespace DustMonitor
             //aboutWindow.NavigationService
 
         }
+        public void OnWindowClosing(object sender,EventArgs e) {
+            //Thread.CurrentThread.Abort();
+        }
     }
-    //public class ComOperation {
-    //    public string com
-    //    {
-    //        get;
-    //        set;
-    //    }
-    //    public ComOperation(string com) {
-    //        this.com = com;
-    //    }
-    //    public string ReadProt() {
-    //        string result = string.Empty;
-    //        System.IO.Ports.SerialPort currentPort = new System.IO.Ports.SerialPort(this.com);
-    //        byte[] buffer=new byte[128];
-    //        Regex reg = new Regex(@"{""density"":""[-]?\d{1,4}\.""");
-    //        currentPort.Parity = System.IO.Ports.Parity.None;
-    //        currentPort.BaudRate = 9600;
-    //        currentPort.DataBits = 8;
-    //        currentPort.StopBits = System.IO.Ports.StopBits.One;
-    //        currentPort.Open();
-    //        if (!currentPort.IsOpen)
-    //        {
-    //            MessageBox.Show("请打开"+this.com+"端口");
-    //        }
-    //        while (true)
-    //        {
-    //            currentPort.Read(buffer, 0, buffer.Length);
-    //            if (buffer.Length>90)
-    //            {
-    //                result = System.Text.ASCIIEncoding.Default.GetString(buffer);
 
-
-    //            }
-    //            //MessageBox.Show(System.Text.ASCIIEncoding.Default.GetString(buffer));
-    //        }
-    //        return result;
-    //    }
-    //}
 }
